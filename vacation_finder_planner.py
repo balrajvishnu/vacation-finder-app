@@ -76,14 +76,21 @@ def search_travel_deals(start, dest, start_date, days, preferences):
     results = resp.json().get("organic_results", [])
     return results
 
-def generate_itinerary(dest, start_date, days, preferences, deals):
+def generate_itinerary(dest, start_date, days, preferences, deals, restaurant_preferences=""):
     context = "\n".join([f"{d['title']}: {d.get('snippet', '')} ({d.get('link', '')})" for d in deals])
+    
+    # Set restaurant recommendation text based on user input
+    if restaurant_preferences and restaurant_preferences.strip():
+        restaurant_text = f"Recommend good {restaurant_preferences.strip()} restaurants with good reviews along the way."
+    else:
+        restaurant_text = "By default, recommend good Indian, Thai, or Mexican restaurants with good reviews along the way."
+    
     prompt = (
         f"Plan a detailed {days}-day vacation in {dest} starting on {start_date}. "
         f"Include daily activities, must-see places, and where to eat. "
         f"Optimize the route so that driving distance is minimized and the trip is convenient. "
         f"Choose a logical order for visiting places, making the route efficient but still interesting. "
-        f"By default, recommend good Indian, Thai, or Mexican restaurants with good reviews along the way, unless the user specifies otherwise. "
+        f"{restaurant_text} "
         f"For each night, recommend hotels with a price range around $200/night, with very good reviews and free breakfast, and provide links to book them if possible. "
         f"For each restaurant, provide a link to book or view the menu if possible. "
         f"Give a detailed, clear itinerary with places to see, what to do, and explanations for each. "
@@ -235,6 +242,9 @@ with tabs[0]:
         start_date = st.date_input("Start date:", min_value=datetime.today(), value=st.session_state.get('start_date', datetime.today()))
         days = st.number_input("Number of days:", min_value=1, max_value=30, value=st.session_state.get('days', 7))
         preferences = st.text_input("Preferences (e.g., cruise, city, nature, food, etc.):", value=st.session_state.get('preferences', ''))
+        restaurant_prefs = st.text_input("Restaurant Preferences (e.g., Italian, French, Asian, etc.):", 
+                                         value=st.session_state.get('restaurant_prefs', ''),
+                                         help="By default, the app will recommend good Indian, Thai, or Mexican restaurants. Enter your preferred cuisine types here to customize.")
         submitted = st.form_submit_button("Find & Plan Vacation")
 
     if submitted:
@@ -243,9 +253,10 @@ with tabs[0]:
         st.session_state['start_date'] = start_date
         st.session_state['days'] = days
         st.session_state['preferences'] = preferences
+        st.session_state['restaurant_prefs'] = restaurant_prefs
         with st.spinner("Searching for deals and planning your trip..."):
             deals = search_travel_deals(start, dest, start_date, days, preferences)
-            itinerary = generate_itinerary(dest or 'a great destination', start_date, days, preferences, deals)
+            itinerary = generate_itinerary(dest or 'a great destination', start_date, days, preferences, deals, restaurant_prefs)
             st.session_state['vacation_itinerary'] = itinerary
             st.session_state['vacation_deals'] = deals
             st.subheader("Your Vacation Plan:")
