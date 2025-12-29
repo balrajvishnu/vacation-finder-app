@@ -8,6 +8,7 @@ from datetime import datetime
 from fpdf import FPDF
 import io
 import re
+import pathlib
 from docx import Document
 from io import BytesIO
 from docx.shared import Pt
@@ -259,16 +260,44 @@ with tabs[0]:
             itinerary = generate_itinerary(dest or 'a great destination', start_date, days, preferences, deals, restaurant_prefs)
             st.session_state['vacation_itinerary'] = itinerary
             st.session_state['vacation_deals'] = deals
-            st.subheader("Your Vacation Plan:")
-            st.markdown(itinerary)
-            st.subheader("Top Deals & Booking Links:")
-            for d in deals:
-                st.markdown(f"- [{d['title']}]({d.get('link', '')})")
 
-    # Show export button if plan exists
+    # Display itinerary if it exists in session_state (persists across reruns)
     if 'vacation_itinerary' in st.session_state and 'vacation_deals' in st.session_state:
+        st.subheader("Your Vacation Plan:")
+        st.markdown(st.session_state['vacation_itinerary'])
+        st.subheader("Top Deals & Booking Links:")
+        for d in st.session_state['vacation_deals']:
+            st.markdown(f"- [{d['title']}]({d.get('link', '')})")
+        
+        # Add separator line before Buy Me a Coffee
+        st.markdown("---")
+        
+        # Buy Me a Coffee section - only shown after report is generated
+        st.markdown(
+            """
+            <div style='display: flex; flex-direction: column; align-items: flex-end; margin-top: 20px; margin-bottom: 20px;'>
+                <a href="https://www.buymeacoffee.com/balrajvishnu" target="_blank">
+                    <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="Buy Me a Coffee" style="height: 44px; width: 44px; border-radius: 50%; background: #FFDD00; padding: 4px;">
+                </a>
+                <a href="https://www.buymeacoffee.com/balrajvishnu" target="_blank" style="margin-top: 4px; color: #fff; background: rgba(0,0,0,0.7); padding: 2px 10px; border-radius: 8px; font-size: 1.08em; font-weight: 500; text-align: right; text-decoration: none;">
+                    If you found this useful, buy me a coffee and support my work
+                </a>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
+        # Show export button
         docx_file = export_docx(st.session_state['vacation_itinerary'], st.session_state['vacation_deals'])
-        st.download_button("Download Vacation Plan as DOCX", docx_file, file_name="vacation_plan.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        st.download_button(
+            "Download Vacation Plan as DOCX", 
+            docx_file, 
+            file_name="vacation_plan.docx", 
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+    
+    # Add spacing at the bottom for visual distinction between content and footer
+    st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 with tabs[1]:
@@ -325,3 +354,186 @@ with tabs[1]:
         st.session_state['vacation_chat_history'].append({'role': 'assistant', 'content': answer})
         st.experimental_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
+
+# Add clear separator line before footer
+st.markdown("---")
+
+# --- Footer with Privacy Policy and Disclaimer ---
+# Initialize session state for privacy and disclaimer
+if 'show_privacy' not in st.session_state:
+    st.session_state['show_privacy'] = False
+if 'show_disclaimer' not in st.session_state:
+    st.session_state['show_disclaimer'] = False
+
+# Footer button styling - horizontal, elegant, readable
+footer_css = """
+<style>
+/* Style footer buttons - smaller font and gray color */
+div[data-testid="column"]:has(button[key="vacation_privacy_btn"]) button,
+div[data-testid="column"]:has(button[key="vacation_disclaimer_btn"]) button {
+    font-size: 0.9em !important;
+}
+button:contains("Privacy Policy"), button:contains("Disclaimer") {
+    color: #666 !important;
+    font-size: 0.9em !important;
+}
+.footer-copyright {
+    text-align: center;
+    color: #888;
+    font-size: 0.95em;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+.privacy-main-title, .disclaimer-main-title {
+    font-size: 1.4em;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+    color: #666;
+}
+.privacy-expander-content h2, .disclaimer-expander-content h2 {
+    font-size: 1.1em !important;
+    font-weight: bold !important;
+    margin-top: 1.2em;
+    margin-bottom: 0.5em;
+    color: #666 !important;
+}
+.privacy-expander-content h3, .disclaimer-expander-content h3 {
+    font-size: 0.95em !important;
+    font-weight: bold !important;
+    margin-top: 1em;
+    margin-bottom: 0.4em;
+    color: #666 !important;
+}
+.privacy-expander-content, .disclaimer-expander-content {
+    font-size: 0.9em;
+    color: #666 !important;
+    max-width: 800px;
+    margin: auto;
+}
+.privacy-expander-content p, .disclaimer-expander-content p {
+    color: #666 !important;
+}
+.privacy-expander-content li, .disclaimer-expander-content li {
+    color: #666 !important;
+}
+.privacy-expander-content strong, .disclaimer-expander-content strong {
+    color: #666 !important;
+}
+.privacy-expander-content *, .disclaimer-expander-content * {
+    color: #666 !important;
+}
+/* Make all text in expander gray */
+.stExpander [data-testid="stMarkdownContainer"] {
+    color: #666 !important;
+}
+.stExpander [data-testid="stMarkdownContainer"] p,
+.stExpander [data-testid="stMarkdownContainer"] li,
+.stExpander [data-testid="stMarkdownContainer"] h2,
+.stExpander [data-testid="stMarkdownContainer"] h3,
+.stExpander [data-testid="stMarkdownContainer"] strong {
+    color: #666 !important;
+}
+</style>
+"""
+st.markdown(footer_css, unsafe_allow_html=True)
+
+# Privacy Policy and Disclaimer buttons - horizontal, elegant layout
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    btn1, btn2 = st.columns(2)
+    with btn1:
+        if st.button("Privacy Policy", key="vacation_privacy_btn", help="View Privacy Policy", use_container_width=True):
+            st.session_state['show_privacy'] = True
+            st.rerun()
+    with btn2:
+        if st.button("Disclaimer", key="vacation_disclaimer_btn", help="View Disclaimer", use_container_width=True):
+            st.session_state['show_disclaimer'] = True
+            st.rerun()
+
+# Copyright notice
+st.markdown('<div class="footer-copyright">© 2025 Vishnu Balraj</div>', unsafe_allow_html=True)
+
+# Privacy Policy content
+PRIVACY_POLICY_TEXT = """
+## Privacy Policy
+
+This document outlines the privacy practices for the Vacation Finder & Planner application.
+
+## Data Collection and Storage
+
+This application is designed with your privacy in mind.
+
+*   **API Usage:** This application uses OpenAI API and SerpAPI to generate travel itineraries and search for deals. Your travel preferences, destinations, and dates are sent to these services to provide you with personalized vacation plans.
+
+*   **No Permanent Storage:** The application does not permanently store your travel preferences, itineraries, or personal information on any server. Data is processed in real-time and only maintained in your browser session.
+
+*   **Session State:** The application uses Streamlit's session state functionality to maintain your itinerary and preferences during your active session. This data is cleared when you close your browser tab.
+
+*   **No Analytics or Tracking:** This application does not use tracking services like Google Analytics. We do not collect anonymous usage statistics, browser information, or location data beyond what you explicitly provide.
+
+*   **API Keys:** If you deploy this application yourself, your API keys are stored securely using Streamlit's secrets management and are never exposed to users.
+
+## Your Data
+
+Your travel search queries, preferences, and generated itineraries are processed through third-party APIs (OpenAI and SerpAPI) but are not stored by this application. You are responsible for saving your generated vacation plans to your own device if you wish to keep them.
+
+## Third-Party Services
+
+*   **OpenAI:** Used for generating AI-powered vacation itineraries. Please review OpenAI's privacy policy for information about how they handle data.
+*   **SerpAPI:** Used for searching travel deals and information. Please review SerpAPI's privacy policy for information about how they handle data.
+
+---
+
+© 2025 Vishnu Balraj
+"""
+
+# Disclaimer content
+DISCLAIMER_TEXT = """
+**Disclaimer:**
+
+The creators of the Vacation Finder & Planner application make every effort to provide accurate and useful travel information, but we make no guarantees about:
+
+*   The accuracy, completeness, or timeliness of travel deals, prices, hotel recommendations, or restaurant suggestions.
+*   The availability of hotels, restaurants, or activities at the recommended locations.
+*   The suitability of any recommendations for your specific needs, preferences, or dietary requirements.
+
+**Important Notes:**
+
+*   All prices, availability, and information are subject to change without notice.
+*   You should verify all travel information, including hotel availability, restaurant hours, and activity details, directly with the providers before making reservations.
+*   The AI-generated itineraries are suggestions only and should be reviewed and customized according to your preferences and needs.
+*   The creators are not responsible for any booking issues, travel disruptions, or dissatisfaction with recommended services.
+*   Always check current travel advisories, visa requirements, and health guidelines for your destination before traveling.
+
+**Limitation of Liability:**
+
+The creators of this application are not liable for any loss, damage, or inconvenience arising from the use of this application or reliance on any information, recommendations, or links provided herein. Users assume all responsibility for their travel planning and decisions.
+
+---
+
+© 2025 Vishnu Balraj
+"""
+
+# Display Privacy Policy if requested
+if st.session_state.get('show_privacy', False):
+    with st.expander("Privacy Policy", expanded=True):
+        privacy_md = PRIVACY_POLICY_TEXT
+        privacy_md = re.sub(r'^#+\s*Privacy Policy\s*\n', '', privacy_md, flags=re.IGNORECASE)
+        st.markdown('<div class="privacy-main-title">Privacy Policy</div>', unsafe_allow_html=True)
+        st.markdown('<div class="privacy-expander-content">', unsafe_allow_html=True)
+        st.markdown(privacy_md, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        if st.button("Close", key="close_vacation_privacy"):
+            st.session_state['show_privacy'] = False
+            st.rerun()
+
+# Display Disclaimer if requested
+if st.session_state.get('show_disclaimer', False):
+    with st.expander("Disclaimer", expanded=True):
+        st.markdown('<div class="disclaimer-main-title">Disclaimer</div>', unsafe_allow_html=True)
+        st.markdown('<div class="disclaimer-expander-content">', unsafe_allow_html=True)
+        st.markdown(DISCLAIMER_TEXT, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+        if st.button("Close", key="close_vacation_disclaimer"):
+            st.session_state['show_disclaimer'] = False
+            st.rerun()
