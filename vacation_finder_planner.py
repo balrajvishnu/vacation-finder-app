@@ -16,6 +16,32 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 import markdown2
 from bs4 import BeautifulSoup
+from PIL import Image
+
+# Set page config with custom icon
+icon_path = os.path.join(os.path.dirname(__file__), 'DigitaL_Planner_App.png')
+if os.path.exists(icon_path):
+    try:
+        icon_img = Image.open(icon_path)
+        st.set_page_config(
+            page_title="Vacation Finder & Planner",
+            page_icon=icon_img,
+            layout="wide"
+        )
+    except Exception as e:
+        # Fallback to emoji if image fails to load
+        st.set_page_config(
+            page_title="Vacation Finder & Planner",
+            page_icon="🗺️",
+            layout="wide"
+        )
+else:
+    # Fallback to emoji if image doesn't exist
+    st.set_page_config(
+        page_title="Vacation Finder & Planner",
+        page_icon="🗺️",
+        layout="wide"
+    )
 
 # Set your API keys
 # Import API keys from config file (for local development)
