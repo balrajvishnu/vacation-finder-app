@@ -61,6 +61,54 @@ openai.api_key = OPENAI_API_KEY
 
 SERPAPI_SEARCH_URL = "https://serpapi.com/search.json"
 
+# Inject Open Graph meta tags for Twitter/social media previews
+# Note: The image URL must be publicly accessible (e.g., via GitHub raw URL)
+st.markdown("""
+<script>
+(function() {
+    // Get the current page URL
+    const pageUrl = window.location.href;
+    
+    // Image URL - using GitHub raw URL format (update with your actual repo path)
+    // Format: https://raw.githubusercontent.com/USERNAME/REPO/BRANCH/FILENAME.png
+    const imageUrl = "https://raw.githubusercontent.com/balrajvishnu/vacation-finder-app/main/DigitaL_Planner_App.png";
+    
+    // Title and description
+    const ogTitle = "Vacation Finder & Planner";
+    const ogDescription = "Plan your perfect vacation with AI-powered itinerary generation, hotel recommendations, and restaurant suggestions.";
+    
+    // Function to create or update meta tag
+    function setMetaTag(property, content) {
+        let meta = document.querySelector(`meta[property="${property}"]`) || 
+                   document.querySelector(`meta[name="${property}"]`);
+        if (!meta) {
+            meta = document.createElement('meta');
+            if (property.startsWith('og:')) {
+                meta.setAttribute('property', property);
+            } else {
+                meta.setAttribute('name', property);
+            }
+            document.head.appendChild(meta);
+        }
+        meta.setAttribute('content', content);
+    }
+    
+    // Set Open Graph tags
+    setMetaTag('og:title', ogTitle);
+    setMetaTag('og:description', ogDescription);
+    setMetaTag('og:image', imageUrl);
+    setMetaTag('og:url', pageUrl);
+    setMetaTag('og:type', 'website');
+    
+    // Set Twitter Card tags
+    setMetaTag('twitter:card', 'summary_large_image');
+    setMetaTag('twitter:title', ogTitle);
+    setMetaTag('twitter:description', ogDescription);
+    setMetaTag('twitter:image', imageUrl);
+})();
+</script>
+""", unsafe_allow_html=True)
+
 # Add this after imports, before any Streamlit UI code
 st.markdown(
     '''
